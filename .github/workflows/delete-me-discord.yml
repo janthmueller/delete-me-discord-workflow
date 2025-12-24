@@ -21,11 +21,10 @@ jobs:
       - name: Install delete-me-discord
         run: |
           python -m pip install --upgrade pip
-          pip install delete-me-discord==0.0.9
+          pip install -U delete-me-discord
 
       - name: Run delete-me-discord
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          DISCORD_USER_ID: ${{ secrets.DISCORD_USER_ID }}
         run: |
           delete-me-discord ${{ secrets.DELETE_ME_ARGS }}
