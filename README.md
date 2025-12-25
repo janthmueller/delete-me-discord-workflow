@@ -10,27 +10,38 @@ In contrast to platforms where messages are ephemeral and disappear after a set 
 
 To set up this workflow in your own repository:
 
-1. **Fork This Repository**: Click the "Fork" button at the top right of this page to create your own copy of this repository.
+1. **Fork This Repository**  
+   Click the "Fork" button at the top right of this page to create your own copy of this repository.
 
-2. **Configure GitHub Secrets**:
-   - In your forked repository, navigate to **Settings** > **Secrets and variables** > **Actions**.
+2. **Enable GitHub Actions in Your Fork (If Not Already Enabled)**  
+   In some cases, GitHub disables Actions by default for forked repositories.
+
+   After forking, check:
+   - **Settings** → **Actions** → **General**
+   - Ensure **Allow all actions and reusable workflows** is selected
+
+   If Actions are disabled, the workflow will not run (including scheduled jobs).
+
+3. **Configure GitHub Secrets**  
+   - In your forked repository, navigate to **Settings** → **Secrets and variables** → **Actions**
    - Add the following secrets:
-     - `DISCORD_TOKEN`: Your Discord authorization token.
-     - `DELETE_ME_ARGS`: A string containing all command-line arguments for `delete-me-discord`. For example:
+     - `DISCORD_TOKEN`: Your Discord authorization token (See [this guide](https://github.com/victornpb/undiscord/wiki/authToken) to obtain your token)
+     - `DELETE_ME_ARGS`: A string containing all command-line arguments for [`delete-me-discord`](https://github.com/janthmueller/delete-me-discord), for example:
        ```
        --preserve-n 10 --preserve-last "weeks=2" --log-level CRITICAL
        ```
 
-3. **Set Log Level in Arguments**:
-   - Including `--log-level CRITICAL` in the `DELETE_ME_ARGS` ensures that no messages are logged during execution, as the current version of `delete-me-discord` does not produce critical-level log messages. This is particularly important for public repositories to prevent the accidental exposure of sensitive information.
+4. **Set Log Level in Arguments**  
+   Including `--log-level CRITICAL` in `DELETE_ME_ARGS` ensures that no messages are logged during execution.  
+   Since the current version of [`delete-me-discord`](https://github.com/janthmueller/delete-me-discord) does not emit critical-level log messages, this effectively suppresses all output which is important for public repositories.
 
-4. **Schedule the Workflow**:
-   - The workflow is configured to run daily at 02:00 UTC. You can adjust the schedule by modifying the `cron` expression in the workflow file:
-     ```yaml
-     on:
-       schedule:
-         - cron: '0 2 * * *'
-     ```
+5. **Schedule the Workflow**  
+   The workflow is configured to run daily at 02:00 UTC.  
+   You can adjust the schedule by modifying the `cron` expression in the workflow file:
+   ```yaml
+   on:
+     schedule:
+       - cron: '0 2 * * *'
 
 ## Security Considerations
 
