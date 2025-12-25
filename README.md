@@ -16,7 +16,6 @@ To set up this workflow in your own repository:
    - In your forked repository, navigate to **Settings** > **Secrets and variables** > **Actions**.
    - Add the following secrets:
      - `DISCORD_TOKEN`: Your Discord authorization token.
-     - `DISCORD_USER_ID`: Your Discord user ID.
      - `DELETE_ME_ARGS`: A string containing all command-line arguments for `delete-me-discord`. For example:
        ```
        --preserve-n 10 --preserve-last "weeks=2" --log-level CRITICAL
