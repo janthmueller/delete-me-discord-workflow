@@ -1,0 +1,55 @@
+name: Delete Me Discord
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # daily at 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install delete-me-discord
+        run: |
+          python -m pip install --upgrade pip
+          pip install delete-me-discord
+
+      - name: Restore/create preserve cache (if used)
+        id: cache-preserve
+        uses: actions/cache@v4
+        with:
+          path: .cache/delete-me-discord.json
+          key: preserve-cache-${{ github.repository }}
+
+      - name: Run delete-me-discord
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          DELETE_ME_ARGS: ${{ secrets.DELETE_ME_ARGS }}
+        run: |
+          mkdir -p .cache
+          EXTRA_ARGS=""
+          if [[ "$DELETE_ME_ARGS" == *"--preserve-cache-path"* ]]; then
+            echo "Error: Do not supply --preserve-cache-path in DELETE_ME_ARGS; it is set by the workflow."
+            exit 1
+          fi
+          if [[ "$DELETE_ME_ARGS" == *"--preserve-cache"* ]]; then
+            EXTRA_ARGS="--preserve-cache-path .cache/delete-me-discord.json"
+          fi
+          delete-me-discord $DELETE_ME_ARGS $EXTRA_ARGS
+
+      - name: Save preserve cache (if used)
+        if: steps.cache-preserve.outcome != 'cancelled'
+        uses: actions/cache@v4
+        with:
+          path: .cache/delete-me-discord.json
+          key: preserve-cache-${{ github.repository }}

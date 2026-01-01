@@ -49,6 +49,8 @@ To set up this workflow in your own repository:
 
 - **Log Level Configuration**: Including the log level setting in the `DELETE_ME_ARGS` ensures that only critical issues are logged. Since the current version of `delete-me-discord` does not produce critical-level log messages, setting the log level to `CRITICAL` effectively suppresses all logging output, reducing the risk of exposing sensitive information such as channel IDs, names, and message IDs in public repositories.
 
+- **Preserve cache**: If you use `--preserve-cache` in `DELETE_ME_ARGS`, the workflow will store the cache in the workspace at `.cache/delete-me-discord.json` and restore it across runs via the Actions cache. This cache is not committed to the repository and is only accessible to those with Actions/cache access on your repo. For public repos, ensure you’re comfortable with that scope and keep logs quiet (e.g., `--log-level CRITICAL`).
+
 ## Additional Resources
 
 - **delete-me-discord Documentation**: For more details on configuring and using the tool, refer to the [official repository](https://github.com/janthmueller/delete-me-discord).
