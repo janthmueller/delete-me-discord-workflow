@@ -46,10 +46,3 @@ jobs:
             EXTRA_ARGS="--preserve-cache-path .cache/delete-me-discord.json"
           fi
           delete-me-discord $DELETE_ME_ARGS $EXTRA_ARGS
-
-      - name: Save preserve cache (if used)
-        if: steps.cache-preserve.outcome != 'cancelled'
-        uses: actions/cache@v4
-        with:
-          path: .cache/delete-me-discord.json
-          key: preserve-cache-${{ github.repository }}

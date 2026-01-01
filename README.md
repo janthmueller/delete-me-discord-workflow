@@ -28,7 +28,7 @@ To set up this workflow in your own repository:
      - `DISCORD_TOKEN`: Your Discord authorization token (See [this guide](https://github.com/victornpb/undiscord/wiki/authToken) to obtain your token)
      - `DELETE_ME_ARGS`: A string containing all command-line arguments for [`delete-me-discord`](https://github.com/janthmueller/delete-me-discord), for example:
        ```
-       --preserve-n 10 --preserve-last "weeks=2" --log-level CRITICAL
+       --preserve-last 2w --preserve-n 30 --preserve-n-mode all --preserve-cache --delete-reactions --fetch-max-age 1d1h --log-level CRITICAL
        ```
 
 4. **Set Log Level in Arguments**  
