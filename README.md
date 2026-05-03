@@ -1,60 +1,102 @@
 # delete-me-discord-workflow
 
-> **⚠️ Use at Your Own Risk:** Utilizing automated tools on Discord may violate [Discord's Terms of Service](https://discord.com/terms) and could lead to account suspension or termination. Please use this workflow responsibly and be aware of the potential risks involved.
+GitHub Actions workflow for running [`delete-me-discord`](https://github.com/janthmueller/delete-me-discord) v2 on a schedule.
 
-This repository provides a GitHub Actions workflow to automate the execution of the [`delete-me-discord`](https://github.com/janthmueller/delete-me-discord) tool. This tool allows users to delete their Discord messages across multiple channels based on specific criteria, such as preserving a certain number of recent messages or deleting messages older than a specified time frame. It also supports including or excluding specific channels, guilds, or categories, offering flexibility in message management.
+> Warning: automated Discord tooling may violate Discord's [Terms of Service](https://discord.com/terms). Use at your own risk.
 
-In contrast to platforms where messages are ephemeral and disappear after a set period, Discord retains messages indefinitely. The `delete-me-discord` tool provides functionality to manage and delete your messages, similar to how ephemeral messaging apps automatically remove messages after a certain time.
+This repository is intentionally small. It installs `delete-me-discord>=2,<3`, restores the previous preserve cache when one exists, and runs:
 
-## Setting Up the Workflow
+```bash
+dmd clean $DELETE_ME_ARGS ... --quiet --redact-sensitive
+```
 
-To set up this workflow in your own repository:
+The workflow appends `--quiet --redact-sensitive` so public Action logs do not print normal cleanup output and sensitive values are masked in warnings or errors.
 
-1. **Fork This Repository**  
-   Click the "Fork" button at the top right of this page to create your own copy of this repository.
+## Setup
 
-2. **Enable GitHub Actions in Your Fork (If Not Already Enabled)**  
-   In some cases, GitHub disables Actions by default for forked repositories.
+1. Fork this repository or copy `.github/workflows/run.yml` into a private repository.
+2. Enable GitHub Actions for the repository if GitHub asks you to.
+3. Add repository secrets under **Settings -> Secrets and variables -> Actions**:
 
-   After forking, check:
-   - **Settings** → **Actions** → **General**
-   - Ensure **Allow all actions and reusable workflows** is selected
+| Secret | Required | Purpose |
+| --- | --- | --- |
+| `DISCORD_TOKEN` | yes | Discord user token used by `dmd clean`. |
+| `DELETE_ME_ARGS` | yes | Arguments passed after `dmd clean`. Do not include the `clean` command itself. |
 
-   If Actions are disabled, the workflow will not run (including scheduled jobs).
+If you need token extraction steps, see the [`delete-me-discord` authentication docs](https://janthmueller.github.io/delete-me-discord/getting-started/authentication/).
 
-3. **Configure GitHub Secrets**  
-   - In your forked repository, navigate to **Settings** → **Secrets and variables** → **Actions**
-   - Add the following secrets:
-     - `DISCORD_TOKEN`: Your Discord authorization token (See [this guide](https://github.com/victornpb/undiscord/wiki/authToken) to obtain your token)
-     - `DELETE_ME_ARGS`: A string containing all command-line arguments for [`delete-me-discord`](https://github.com/janthmueller/delete-me-discord), for example:
-       ```
-       --preserve-last 2w --preserve-n 30 --preserve-n-mode all --preserve-cache --delete-reactions --fetch-max-age 1d1h --log-level CRITICAL
-       ```
+## Configure `DELETE_ME_ARGS`
 
-4. **Set Log Level in Arguments**  
-   Including `--log-level CRITICAL` in `DELETE_ME_ARGS` ensures that no messages are logged during execution.  
-   Since the current version of [`delete-me-discord`](https://github.com/janthmueller/delete-me-discord) does not emit critical-level log messages, this effectively suppresses all output which is important for public repositories.
+Use v2 option names. A daily rolling-retention example:
 
-5. **Schedule the Workflow**  
-   The workflow is configured to run daily at 02:00 UTC.  
-   You can adjust the schedule by modifying the `cron` expression in the workflow file:
-   ```yaml
-   on:
-     schedule:
-       - cron: '0 2 * * *'
+```text
+--include-ids 123456789012345678 --keep-within 2w --fetch-within 2w1d --preserve-cache
+```
 
-## Security Considerations
+An example that also keeps the last 20 messages per channel:
 
-- **Repository Visibility**: If you choose to fork this repository or add the workflow to your own, consider the visibility of your repository. For public repositories, ensure that no sensitive information is exposed through logs or code. Alternatively, you can add the workflow to a private repository to enhance security.
+```text
+--include-ids 123456789012345678 --keep-within 2w --keep-last 20 --fetch-within 1d --preserve-cache
+```
 
-- **Log Level Configuration**: Including the log level setting in the `DELETE_ME_ARGS` ensures that only critical issues are logged. Since the current version of `delete-me-discord` does not produce critical-level log messages, setting the log level to `CRITICAL` effectively suppresses all logging output, reducing the risk of exposing sensitive information such as channel IDs, names, and message IDs in public repositories.
+Useful v2 options:
 
-- **Preserve cache**: If you use `--preserve-cache` in `DELETE_ME_ARGS`, the workflow will store the cache in the workspace at `.cache/delete-me-discord.json` and restore it across runs via the Actions cache. This cache is not committed to the repository and is only accessible to those with Actions/cache access on your repo. For public repos, ensure you’re comfortable with that scope and keep logs quiet (e.g., `--log-level CRITICAL`).
+| Option | Meaning |
+| --- | --- |
+| `--include-ids` / `--exclude-ids` | Scope the run to specific guild, category, channel, DM, or Group DM IDs. Unique ID suffixes are accepted. |
+| `--keep-within 2w` | Keep messages and reactions newer than two weeks. |
+| `--keep-last 20` | Keep the last 20 messages per channel. |
+| `--keep-last-scope all` | Count `--keep-last` against all recent messages. This is the v2 default. |
+| `--fetch-within 1d` | Only inspect recent history during recurring runs. Choose this carefully. |
+| `--preserve-cache` | Persist kept message IDs between scheduled runs. Recommended when combining `--keep-last` with a limited fetch window. |
+| `--keep-reactions` | Keep your reactions instead of deleting them. By default, v2 removes your reactions too. |
+| `--dry-run` | Preview without deleting. Useful for manual `workflow_dispatch` tests. |
 
-## Additional Resources
+Do not set `--preserve-cache-path` in `DELETE_ME_ARGS`. The workflow sets it to `.cache/delete-me-discord.json` whenever `--preserve-cache` is present, and caches the `.cache` directory between runs.
+The cache key changes on every run and uses a restore prefix, so updates from one scheduled run can be picked up by the next one.
 
-- **delete-me-discord Documentation**: For more details on configuring and using the tool, refer to the [official repository](https://github.com/janthmueller/delete-me-discord).
+The workflow uses shell word splitting for `DELETE_ME_ARGS`. Prefer compact values such as `2w`, `2w1d`, and `1d` instead of quoted strings.
 
-- **GitHub Actions Security Best Practices**: To enhance the security of your workflows, consider reviewing [GitHub Actions Security Best Practices](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions).
+## First Run
 
-By following this guide, you can automate the execution of `delete-me-discord` using GitHub Actions while adhering to security best practices to protect your sensitive information.
+Before enabling a schedule, test the same scope locally with `--dry-run`:
+
+```bash
+dmd list channels -r 4
+dmd clean --include-ids <channel_id_or_suffix> --keep-within 2w --dry-run
+```
+
+For rolling retention, the first real run should usually omit a narrow `--fetch-within` so the tool can inspect enough history. After that, add the recurring fetch window to `DELETE_ME_ARGS`.
+
+See:
+
+- [First Run](https://janthmueller.github.io/delete-me-discord/getting-started/first-run/)
+- [Rolling Retention](https://janthmueller.github.io/delete-me-discord/guides/rolling-retention/)
+- [Preserve Cache](https://janthmueller.github.io/delete-me-discord/guides/preserve-cache/)
+
+## Schedule
+
+The included workflow runs daily at 02:00 UTC:
+
+```yaml
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+```
+
+Change the cron expression in `.github/workflows/run.yml` if you need a different cadence.
+
+## Security Notes
+
+- Prefer a private repository if possible.
+- Keep `DISCORD_TOKEN` only in GitHub Actions secrets.
+- The preserve cache is stored through GitHub Actions cache, not committed to the repository.
+- The workflow forces `--quiet --redact-sensitive` for safer logs. To inspect detailed output, run locally or edit the workflow intentionally.
+- Anyone who can modify workflows or read Actions secrets/cache in the repository should be treated as trusted.
+
+## Resources
+
+- [`delete-me-discord` repository](https://github.com/janthmueller/delete-me-discord)
+- [`delete-me-discord` documentation](https://janthmueller.github.io/delete-me-discord/)
+- [GitHub Actions security hardening](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)

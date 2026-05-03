@@ -22,27 +22,43 @@ jobs:
       - name: Install delete-me-discord
         run: |
           python -m pip install --upgrade pip
-          pip install delete-me-discord
+          pip install "delete-me-discord>=2,<3"
 
       - name: Restore/create preserve cache (if used)
         id: cache-preserve
         uses: actions/cache@v4
         with:
-          path: .cache/delete-me-discord.json
-          key: preserve-cache-${{ github.repository }}
+          path: .cache
+          key: preserve-cache-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            preserve-cache-${{ github.repository }}-
 
       - name: Run delete-me-discord
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           DELETE_ME_ARGS: ${{ secrets.DELETE_ME_ARGS }}
         run: |
+          set -euo pipefail
           mkdir -p .cache
-          EXTRA_ARGS=""
-          if [[ "$DELETE_ME_ARGS" == *"--preserve-cache-path"* ]]; then
-            echo "Error: Do not supply --preserve-cache-path in DELETE_ME_ARGS; it is set by the workflow."
+          EXTRA_ARGS=()
+          if [[ -z "$DISCORD_TOKEN" ]]; then
+            echo "Error: DISCORD_TOKEN is empty. Add it as a repository Actions secret."
             exit 1
           fi
-          if [[ "$DELETE_ME_ARGS" == *"--preserve-cache"* ]]; then
-            EXTRA_ARGS="--preserve-cache-path .cache/delete-me-discord.json"
+          if [[ -z "$DELETE_ME_ARGS" ]]; then
+            echo "Error: DELETE_ME_ARGS is empty. Configure the cleanup scope and retention arguments first."
+            exit 1
           fi
-          delete-me-discord $DELETE_ME_ARGS $EXTRA_ARGS
+          ARGS=($DELETE_ME_ARGS)
+          for arg in "${ARGS[@]}"; do
+            case "$arg" in
+              --preserve-cache-path|--preserve-cache-path=*)
+                echo "Error: Do not supply --preserve-cache-path in DELETE_ME_ARGS; it is set by the workflow."
+                exit 1
+                ;;
+              --preserve-cache)
+                EXTRA_ARGS=(--preserve-cache-path .cache/delete-me-discord.json)
+                ;;
+            esac
+          done
+          dmd clean "${ARGS[@]}" "${EXTRA_ARGS[@]}" --quiet --redact-sensitive
