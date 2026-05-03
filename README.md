@@ -27,10 +27,10 @@ If you need token extraction steps, see the [`delete-me-discord` authentication 
 
 ## Configure `DELETE_ME_ARGS`
 
-Use v2 option names. A daily rolling-retention example:
+Use v2 option names. A daily rolling-retention example without preserve-cache:
 
 ```text
---include-ids 123456789012345678 --keep-within 2w --fetch-within 2w1d --preserve-cache
+--include-ids 123456789012345678 --keep-within 2w --fetch-within 2w1d
 ```
 
 An example that also keeps the last 20 messages per channel:
