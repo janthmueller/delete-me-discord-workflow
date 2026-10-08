@@ -39,6 +39,30 @@ An example that also keeps the last 20 messages per channel:
 --include-ids 123456789012345678 --keep-within 2w --keep-last 20 --fetch-within 1d --preserve-cache
 ```
 
+### Policy used by this repository
+
+GitHub Actions secret values cannot be read back after they are stored. This
+section is therefore the version-controlled record of the intended
+`DELETE_ME_ARGS` value for this repository and should be updated whenever the
+secret changes.
+
+The initial cache-seeding run uses no fetch window so it can inspect the full
+eligible history:
+
+```text
+--keep-within 2w --keep-last 50 --keep-last-scope all --preserve-cache
+```
+
+After that seed run succeeds, scheduled runs use:
+
+```text
+--keep-within 2w --keep-last 50 --keep-last-scope all --fetch-within 1d6h --preserve-cache
+```
+
+Because neither `--include-ids` nor `--exclude-ids` is set, this policy covers
+all eligible channels visible to the authenticated account. The six-hour
+overlap in `--fetch-within` allows for delayed daily workflow starts.
+
 Useful v2 options:
 
 | Option | Meaning |
